@@ -89,7 +89,32 @@ body { min-height: 100dvh; }
   cursor: pointer;
   white-space: nowrap;
 }
-.month-badge:hover { border-color: var(--border2); }
+.month-badge:hover { 
+  border-color: var(--border2); 
+}
+.month-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.month-btn {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  transition: all 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.month-btn:hover {
+  border-color: var(--border2);
+  color: var(--text);
+}
 
 /* ── Balance cards ─────────────────────────────────────────────── */
 .balance-section { padding: 1rem 1.25rem 0; }
@@ -536,10 +561,11 @@ body { min-height: 100dvh; }
       <h1>Depto</h1>
       <p>Feli · Bau · Helen</p>
     </div>
-    <div class="month-badge" id="month-badge" onclick="cycleMonth()">
-      cargando...
-    </div>
-  </div>
+    <div class="month-nav">
+  <button class="month-btn" onclick="previousMonth()" title="Mes anterior">‹</button>
+  <div class="month-badge" id="month-badge">cargando...</div>
+  <button class="month-btn" onclick="nextMonth()" title="Próximo mes">›</button>
+</div>
 
   <!-- Balances -->
   <div class="balance-section">
@@ -733,9 +759,16 @@ function showToast(msg) {
 function updateMonthBadge() {
   document.getElementById('month-badge').textContent = MESES_ES[currentMonth] + ' ' + currentYear;
 }
-function cycleMonth() {
+function previousMonth() {
   currentMonth--;
   if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  updateMonthBadge();
+  renderAll();
+}
+
+function nextMonth() {
+  currentMonth++;
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
   updateMonthBadge();
   renderAll();
 }
