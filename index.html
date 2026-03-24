@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Depto · Gastos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & base ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --feli:   #2563EB;
+  --bau:    #7C3AED;
+  --helen:  #059669;
+  --feli-bg:  #EFF6FF;
+  --bau-bg:   #F5F3FF;
+  --helen-bg: #ECFDF5;
+  --feli-bd:  #BFDBFE;
+  --bau-bd:   #DDD6FE;
+  --helen-bd: #A7F3D0;
+
+  --bg:       #F8F7F4;
+  --surface:  #FFFFFF;
+  --surface2: #F1F0ED;
+  --border:   #E5E3DF;
+  --border2:  #D1CFC9;
+  --text:     #1A1917;
+  --muted:    #6B6860;
+  --subtle:   #A8A49D;
+
+  --fijos-bg:  #FEF9EE;
+  --fijos-bd:  #FDE68A;
+  --fijos-tx:  #92400E;
+  --vars-bg:   #FEF2F2;
+  --vars-bd:   #FECACA;
+  --vars-tx:   #991B1B;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 15px;
+  color: var(--text);
+  background: var(--bg);
+}
+
+body { min-height: 100dvh; }
+
+/* ── Layout ────────────────────────────────────────────────────── */
+.shell {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+/* ── Header ────────────────────────────────────────────────────── */
+.header {
+  padding: 1.25rem 1.25rem 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.header-left h1 {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.header-left p {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.month-badge {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.month-badge:hover { border-color: var(--border2); }
+
+/* ── Balance cards ─────────────────────────────────────────────── */
+.balance-section { padding: 1rem 1.25rem 0; }
+.balance-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.bal-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.875rem 0.75rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.bal-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.bal-card.feli::before { background: var(--feli); }
+.bal-card.bau::before  { background: var(--bau); }
+.bal-card.helen::before { background: var(--helen); }
+
+.bal-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 500;
+  margin: 0 auto 6px;
+}
+.bal-card.feli  .bal-avatar { background: var(--feli-bg);  color: var(--feli);  border: 1px solid var(--feli-bd); }
+.bal-card.bau   .bal-avatar { background: var(--bau-bg);   color: var(--bau);   border: 1px solid var(--bau-bd); }
+.bal-card.helen .bal-avatar { background: var(--helen-bg); color: var(--helen); border: 1px solid var(--helen-bd); }
+
+.bal-name  { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.bal-num   { font-size: 15px; font-weight: 500; font-family: 'DM Mono', monospace; }
+.bal-num.pos  { color: var(--helen); }
+.bal-num.neg  { color: #DC2626; }
+.bal-num.zero { color: var(--subtle); }
+
+/* ── Filters ───────────────────────────────────────────────────── */
+.filters {
+  padding: 0.875rem 1.25rem 0;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.filters::-webkit-scrollbar { display: none; }
+.pill {
+  padding: 5px 13px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.1s;
+  flex-shrink: 0;
+}
+.pill:hover { border-color: var(--border2); color: var(--text); }
+.pill.active { background: var(--text); color: #fff; border-color: var(--text); }
+
+/* ── Section header ─────────────────────────────────────────────── */
+.section-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem 0.5rem;
+}
+.section-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--subtle);
+}
+.count-badge {
+  font-size: 11px;
+  color: var(--subtle);
+  font-family: 'DM Mono', monospace;
+}
+
+/* ── Feed ──────────────────────────────────────────────────────── */
+.feed {
+  padding: 0 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.expense-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.875rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: border-color 0.1s;
+  animation: slideIn 0.18s ease;
+}
+.expense-item:hover { border-color: var(--border2); }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.cat-dot {
+  width: 38px; height: 38px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+.cat-dot.fijo { background: var(--fijos-bg); }
+.cat-dot.var  { background: var(--vars-bg); }
+
+.exp-body { flex: 1; min-width: 0; }
+.exp-desc {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
+}
+.exp-meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.exp-meta .tipo-tag {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+.tipo-tag.fijo  { background: var(--fijos-bg); color: var(--fijos-tx); border: 1px solid var(--fijos-bd); }
+.tipo-tag.var   { background: var(--vars-bg);  color: var(--vars-tx);  border: 1px solid var(--vars-bd); }
+
+.exp-right { text-align: right; flex-shrink: 0; }
+.exp-total { font-size: 14px; font-weight: 500; font-family: 'DM Mono', monospace; }
+.exp-payer { font-size: 11px; margin-top: 2px; font-weight: 500; }
+.exp-payer.feli  { color: var(--feli); }
+.exp-payer.bau   { color: var(--bau); }
+.exp-payer.helen { color: var(--helen); }
+
+.del-btn {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--subtle);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: all 0.1s;
+  opacity: 0;
+}
+.expense-item:hover .del-btn { opacity: 1; }
+.del-btn:hover { background: var(--vars-bg); color: #DC2626; border-color: var(--vars-bd); }
+
+/* ── Empty state ─────────────────────────────────────────────────── */
+.empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--subtle);
+}
+.empty p { font-size: 14px; margin-top: 8px; }
+
+/* ── FAB ─────────────────────────────────────────────────────────── */
+.fab-area { padding: 1rem 1.25rem 1.5rem; }
+.fab {
+  width: 100%;
+  padding: 0.875rem;
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--text);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: opacity 0.15s;
+}
+.fab:hover { opacity: 0.88; }
+.fab:active { opacity: 0.75; }
+.fab-icon {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; line-height: 1;
+}
+
+/* ── Loading state ───────────────────────────────────────────────── */
+.loading-bar {
+  height: 2px;
+  background: var(--text);
+  position: fixed;
+  top: 0; left: 0;
+  width: 0%;
+  transition: width 0.3s ease;
+  z-index: 999;
+}
+.spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--text);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Toast ───────────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: var(--text);
+  color: #fff;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0;
+  transition: all 0.2s;
+  pointer-events: none;
+  z-index: 500;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Modal overlay ───────────────────────────────────────────────── */
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(26,25,23,0.55);
+  display: flex; align-items: flex-end; justify-content: center;
+  z-index: 200;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s;
+}
+.overlay.open { opacity: 1; pointer-events: all; }
+
+.sheet {
+  background: var(--surface);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  width: 100%; max-width: 480px;
+  padding: 0 1.25rem 2rem;
+  max-height: 92dvh;
+  overflow-y: auto;
+  transform: translateY(16px);
+  transition: transform 0.22s cubic-bezier(.32,.72,0,1);
+}
+.overlay.open .sheet { transform: translateY(0); }
+
+.sheet-handle {
+  width: 36px; height: 4px;
+  background: var(--border2);
+  border-radius: 2px;
+  margin: 12px auto 1.25rem;
+}
+.sheet h2 {
+  font-size: 17px;
+  font-weight: 500;
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.01em;
+}
+
+/* ── Form ────────────────────────────────────────────────────────── */
+.field { margin-bottom: 1rem; }
+.field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.field input, .field select, .field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface);
+  outline: none;
+  transition: border-color 0.15s;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.field input:focus, .field select:focus { border-color: var(--border2); }
+.field select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23A8A49D' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.row-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+
+.split-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+  margin-bottom: 4px;
+  text-align: center;
+}
+.split-input input { text-align: center; }
+
+.split-toggle {
+  display: flex; gap: 6px;
+  margin-top: 8px;
+}
+.stoggle {
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.stoggle.active { background: var(--text); color: #fff; border-color: var(--text); }
+
+.form-actions {
+  display: flex; gap: 8px;
+  margin-top: 1.25rem;
+}
+.btn-cancel {
+  flex: 1; padding: 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-family: inherit; font-size: 14px;
+  color: var(--muted); cursor: pointer;
+}
+.btn-cancel:hover { border-color: var(--border2); color: var(--text); }
+.btn-submit {
+  flex: 2; padding: 11px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--text);
+  color: #fff;
+  font-family: inherit; font-size: 14px; font-weight: 500;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: opacity 0.15s;
+}
+.btn-submit:hover { opacity: 0.88; }
+.btn-submit:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ── Config banner ───────────────────────────────────────────────── */
+.config-banner {
+  margin: 1rem 1.25rem 0;
+  padding: 0.875rem 1rem;
+  background: var(--fijos-bg);
+  border: 1px solid var(--fijos-bd);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--fijos-tx);
+}
+.config-banner strong { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.config-banner code {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  background: rgba(146,64,14,0.08);
+  padding: 2px 6px; border-radius: 4px;
+  word-break: break-all;
+}
+.config-banner input {
+  width: 100%;
+  margin-top: 8px;
+  padding: 7px 10px;
+  border: 1px solid var(--fijos-bd);
+  border-radius: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  background: #fff;
+  color: var(--text);
+  outline: none;
+}
+.config-banner button {
+  margin-top: 6px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  background: var(--fijos-tx);
+  color: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media (min-width: 640px) {
+  .shell { border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+}
+</style>
+</head>
+<body>
+
+<div class="loading-bar" id="loading-bar"></div>
+<div class="toast" id="toast"></div>
+
+<div class="shell">
+  <!-- Config banner (visible hasta que se configura la URL) -->
+  <div class="config-banner" id="config-banner">
+    <strong>Configuración inicial</strong>
+    Pegá acá la URL de tu Google Apps Script:
+    <input type="text" id="api-url-input" placeholder="https://script.google.com/macros/s/...">
+    <button onclick="saveApiUrl()">Guardar</button>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>Depto</h1>
+      <p>Feli · Bau · Helen</p>
+    </div>
+    <div class="month-badge" id="month-badge" onclick="cycleMonth()">
+      cargando...
+    </div>
+  </div>
+
+  <!-- Balances -->
+  <div class="balance-section">
+    <div class="balance-grid" id="balance-grid">
+      <div class="bal-card feli">
+        <div class="bal-avatar">F</div>
+        <div class="bal-name">Feli</div>
+        <div class="bal-num zero" id="bal-feli">$0</div>
+      </div>
+      <div class="bal-card bau">
+        <div class="bal-avatar">B</div>
+        <div class="bal-name">Bau</div>
+        <div class="bal-num zero" id="bal-bau">$0</div>
+      </div>
+      <div class="bal-card helen">
+        <div class="bal-avatar">H</div>
+        <div class="bal-name">Helen</div>
+        <div class="bal-num zero" id="bal-helen">$0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters" id="filters"></div>
+
+  <!-- Feed -->
+  <div class="section-row">
+    <span class="section-label">Gastos</span>
+    <span class="count-badge" id="count-badge">0 gastos</span>
+  </div>
+  <div class="feed" id="feed">
+    <div class="empty">
+      <div style="font-size:28px">🧾</div>
+      <p>Todavía no hay gastos este mes</p>
+    </div>
+  </div>
+
+  <!-- FAB -->
+  <div class="fab-area">
+    <button class="fab" onclick="openModal()">
+      <div class="fab-icon">+</div>
+      Agregar gasto
+    </button>
+  </div>
+</div>
+
+<!-- Modal / bottom sheet -->
+<div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
+  <div class="sheet" id="sheet">
+    <div class="sheet-handle"></div>
+    <h2>Nuevo gasto</h2>
+
+    <div class="field">
+      <label>Descripción</label>
+      <input type="text" id="f-desc" placeholder="ej: Supermercado del martes" autocomplete="off">
+    </div>
+
+    <div class="row-2">
+      <div class="field">
+        <label>Tipo</label>
+        <select id="f-tipo">
+          <option value="Variable">Variable</option>
+          <option value="Fijo">Fijo</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Categoría</label>
+        <select id="f-cat">
+          <optgroup label="Fijos">
+            <option>Expensas</option>
+            <option>Alquiler</option>
+            <option>Luz</option>
+            <option>Gas</option>
+            <option>Internet</option>
+            <option>Agua / ABL</option>
+          </optgroup>
+          <optgroup label="Variables">
+            <option selected>Supermercado</option>
+            <option>Limpieza</option>
+            <option>Arreglos</option>
+            <option>Comidas y delivery</option>
+            <option>Farmacia</option>
+            <option>Otros</option>
+          </optgroup>
+        </select>
+      </div>
+    </div>
+
+    <div class="row-2">
+      <div class="field">
+        <label>Quién pagó</label>
+        <select id="f-pagador">
+          <option>Feli</option>
+          <option>Bau</option>
+          <option>Helen</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Monto total ($)</label>
+        <input type="number" id="f-total" placeholder="0" inputmode="decimal" oninput="onTotalChange()">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>División</label>
+      <div class="row-3">
+        <div class="split-input">
+          <div class="split-label" style="color:var(--feli)">Feli</div>
+          <input type="number" id="f-feli" placeholder="0" inputmode="decimal">
+        </div>
+        <div class="split-input">
+          <div class="split-label" style="color:var(--bau)">Bau</div>
+          <input type="number" id="f-bau" placeholder="0" inputmode="decimal">
+        </div>
+        <div class="split-input">
+          <div class="split-label" style="color:var(--helen)">Helen</div>
+          <input type="number" id="f-helen" placeholder="0" inputmode="decimal">
+        </div>
+      </div>
+      <div class="split-toggle">
+        <button class="stoggle active" id="btn-equal" onclick="setEqual()">Partes iguales</button>
+        <button class="stoggle" id="btn-custom" onclick="setCustom()">Personalizado</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Notas (opcional)</label>
+      <input type="text" id="f-notas" placeholder="">
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-submit" id="btn-submit" onclick="submitExpense()">
+        <span id="submit-label">Agregar</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CAT_ICONS = {
+  Expensas:'🏢', Alquiler:'🏠', Luz:'💡', Gas:'🔥', Internet:'📶', 'Agua / ABL':'💧',
+  Supermercado:'🛒', Limpieza:'🧹', Arreglos:'🔧', 'Comidas y delivery':'🍕',
+  Farmacia:'💊', Otros:'📦'
+};
+const FIJOS_CATS = ['Expensas','Alquiler','Luz','Gas','Internet','Agua / ABL'];
+const MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+let allExpenses = [];
+let activeFilter = 'Todos';
+let currentMonth = new Date().getMonth();
+let currentYear  = new Date().getFullYear();
+let isEqualSplit = true;
+let API_URL = localStorage.getItem('depto_api_url') || '';
+
+// ── API URL ────────────────────────────────────────────────────────────────
+function saveApiUrl() {
+  const val = document.getElementById('api-url-input').value.trim();
+  if (!val.startsWith('https://')) { showToast('URL inválida'); return; }
+  API_URL = val;
+  localStorage.setItem('depto_api_url', val);
+  document.getElementById('config-banner').style.display = 'none';
+  showToast('URL guardada');
+  loadExpenses();
+}
+
+function initConfigBanner() {
+  if (API_URL) {
+    document.getElementById('config-banner').style.display = 'none';
+  } else {
+    document.getElementById('api-url-input').value = API_URL;
+  }
+}
+
+// ── Loading bar ─────────────────────────────────────────────────────────────
+function setLoading(pct) {
+  const bar = document.getElementById('loading-bar');
+  bar.style.width = pct + '%';
+  if (pct >= 100) setTimeout(() => { bar.style.width = '0%'; }, 400);
+}
+
+// ── Toast ───────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── Month ───────────────────────────────────────────────────────────────────
+function updateMonthBadge() {
+  document.getElementById('month-badge').textContent = MESES_ES[currentMonth] + ' ' + currentYear;
+}
+function cycleMonth() {
+  currentMonth--;
+  if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  updateMonthBadge();
+  renderAll();
+}
+
+function expenseMatchesMonth(exp) {
+  if (!exp.fecha) return true;
+  const parts = exp.fecha.split('/');
+  if (parts.length < 3) return true;
+  const m = parseInt(parts[1]) - 1;
+  const y = parseInt(parts[2]);
+  return m === currentMonth && y === currentYear;
+}
+
+// ── API calls ────────────────────────────────────────────────────────────────
+async function loadExpenses() {
+  if (!API_URL) return;
+  setLoading(30);
+  try {
+    const res = await fetch(API_URL + '?action=getAll');
+    const data = await res.json();
+    allExpenses = (data.expenses || []).map(e => ({
+      ...e,
+      total:       parseFloat(e.total)       || 0,
+      parte_feli:  parseFloat(e.parte_feli)  || 0,
+      parte_bau:   parseFloat(e.parte_bau)   || 0,
+      parte_helen: parseFloat(e.parte_helen) || 0,
+    }));
+    setLoading(100);
+    renderAll();
+  } catch(err) {
+    setLoading(100);
+    showToast('Error al cargar. Revisá la URL.');
+  }
+}
+
+async function deleteExpense(id) {
+  if (!API_URL) return;
+  allExpenses = allExpenses.filter(e => e.id != id);
+  renderAll();
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'delete', id })
+    });
+    showToast('Gasto eliminado');
+  } catch(e) { showToast('Error al eliminar'); loadExpenses(); }
+}
+
+async function submitExpense() {
+  const desc   = document.getElementById('f-desc').value.trim();
+  const tipo   = document.getElementById('f-tipo').value;
+  const cat    = document.getElementById('f-cat').value;
+  const pagador= document.getElementById('f-pagador').value;
+  const total  = parseFloat(document.getElementById('f-total').value) || 0;
+  const feli   = parseFloat(document.getElementById('f-feli').value)  || 0;
+  const bau    = parseFloat(document.getElementById('f-bau').value)   || 0;
+  const helen  = parseFloat(document.getElementById('f-helen').value) || 0;
+  const notas  = document.getElementById('f-notas').value.trim();
+
+  if (!desc || !total) { showToast('Completá descripción y monto'); return; }
+
+  const now  = new Date();
+  const fecha = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()}`;
+
+  const newExp = { id: Date.now(), fecha, descripcion:desc, categoria:cat, tipo,
+                   pagador, total, parte_feli:feli, parte_bau:bau, parte_helen:helen, notas };
+
+  allExpenses.push(newExp);
+  closeModal();
+  renderAll();
+  showToast('Gasto agregado');
+  resetForm();
+
+  if (!API_URL) return;
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'add', ...newExp })
+    });
+  } catch(e) { showToast('Sin conexión — guardado localmente'); }
+  finally { btn.disabled = false; }
+}
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function getMonthExpenses() {
+  return allExpenses.filter(expenseMatchesMonth);
+}
+
+function calcBalances(expenses) {
+  const paid = {Feli:0, Bau:0, Helen:0};
+  const share= {Feli:0, Bau:0, Helen:0};
+  expenses.forEach(e => {
+    if (e.pagador in paid) paid[e.pagador] += e.total;
+    share.Feli  += e.parte_feli  || 0;
+    share.Bau   += e.parte_bau   || 0;
+    share.Helen += e.parte_helen || 0;
+  });
+  return {
+    Feli:  paid.Feli  - share.Feli,
+    Bau:   paid.Bau   - share.Bau,
+    Helen: paid.Helen - share.Helen,
+  };
+}
+
+function fmtMoney(n) {
+  return '$' + Math.round(Math.abs(n)).toLocaleString('es-AR');
+}
+
+function renderBalances(expenses) {
+  const b = calcBalances(expenses);
+  ['Feli','Bau','Helen'].forEach(p => {
+    const el = document.getElementById('bal-' + p.toLowerCase());
+    const v  = b[p];
+    el.textContent = (v > 0 ? '+' : v < 0 ? '-' : '') + fmtMoney(v);
+    el.className = 'bal-num ' + (v > 0 ? 'pos' : v < 0 ? 'neg' : 'zero');
+  });
+}
+
+function renderFilters(expenses) {
+  const cats = ['Todos', ...new Set(expenses.map(e => e.categoria))];
+  document.getElementById('filters').innerHTML = cats.map(c =>
+    `<button class="pill ${c===activeFilter?'active':''}" onclick="setFilter('${c}')">${c}</button>`
+  ).join('');
+}
+
+function setFilter(cat) {
+  activeFilter = cat;
+  renderAll();
+}
+
+function renderFeed(expenses) {
+  const filtered = activeFilter === 'Todos' ? expenses : expenses.filter(e => e.categoria === activeFilter);
+  const el = document.getElementById('feed');
+  document.getElementById('count-badge').textContent = filtered.length + ' gasto' + (filtered.length !== 1 ? 's' : '');
+
+  if (!filtered.length) {
+    el.innerHTML = `<div class="empty"><div style="font-size:28px">🧾</div><p>${
+      activeFilter === 'Todos' ? 'Todavía no hay gastos este mes' : 'Sin gastos en esta categoría'
+    }</p></div>`;
+    return;
+  }
+
+  el.innerHTML = [...filtered].reverse().map(e => {
+    const esFijo = FIJOS_CATS.includes(e.categoria);
+    const icon   = CAT_ICONS[e.categoria] || '📦';
+    const pClass = (e.pagador||'').toLowerCase();
+    const tClass = esFijo ? 'fijo' : 'var';
+    const tLabel = esFijo ? 'Fijo' : 'Variable';
+    const dateParts = (e.fecha||'').split('/');
+    const dateLabel = dateParts.length >= 2 ? dateParts[0]+'/'+dateParts[1] : e.fecha;
+    return `
+      <div class="expense-item">
+        <div class="cat-dot ${tClass}">${icon}</div>
+        <div class="exp-body">
+          <div class="exp-desc">${e.descripcion}</div>
+          <div class="exp-meta">
+            <span>${dateLabel}</span>
+            <span class="tipo-tag ${tClass}">${tLabel}</span>
+            <span>${e.categoria}</span>
+          </div>
+        </div>
+        <div class="exp-right">
+          <div class="exp-total">${fmtMoney(e.total)}</div>
+          <div class="exp-payer ${pClass}">${e.pagador} pagó</div>
+        </div>
+        <button class="del-btn" onclick="deleteExpense('${e.id}')" title="Eliminar">×</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderAll() {
+  updateMonthBadge();
+  const monthExp = getMonthExpenses();
+  renderBalances(monthExp);
+  renderFilters(monthExp);
+  renderFeed(monthExp);
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+function openModal()  { document.getElementById('overlay').classList.add('open'); document.getElementById('f-desc').focus(); }
+function closeModal() { document.getElementById('overlay').classList.remove('open'); }
+function handleOverlayClick(e) { if (e.target.id === 'overlay') closeModal(); }
+
+function onTotalChange() {
+  if (isEqualSplit) setEqual();
+}
+function setEqual() {
+  isEqualSplit = true;
+  document.getElementById('btn-equal').classList.add('active');
+  document.getElementById('btn-custom').classList.remove('active');
+  const total = parseFloat(document.getElementById('f-total').value) || 0;
+  const part  = Math.round(total / 3 * 100) / 100;
+  document.getElementById('f-feli').value  = part;
+  document.getElementById('f-bau').value   = part;
+  document.getElementById('f-helen').value = Math.round((total - part * 2) * 100) / 100;
+}
+function setCustom() {
+  isEqualSplit = false;
+  document.getElementById('btn-equal').classList.remove('active');
+  document.getElementById('btn-custom').classList.add('active');
+}
+function resetForm() {
+  ['f-desc','f-total','f-feli','f-bau','f-helen','f-notas'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  setEqual();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+initConfigBanner();
+updateMonthBadge();
+renderAll();
+if (API_URL) loadExpenses();
+</script>
+</body>
+</html>
